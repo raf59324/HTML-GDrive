@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Semáforo de Disponibilidad</title>
+    <title>Semáforo de Disponibilidad - Large Dataset</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -28,22 +28,30 @@
             font-size: 16px;
         }
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
+        .table-wrapper {
             overflow-x: auto;
+            max-width: 100%;
+            border: 1px solid #ccc;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: max-content;
+            min-width: 600px;
         }
 
         th, td {
             border: 1px solid #ddd;
             padding: 8px;
             text-align: center;
+            white-space: nowrap;
         }
 
         th {
             background-color: #f4f4f4;
             position: sticky;
             top: 0;
+            z-index: 2;
         }
 
         @media (max-width: 600px) {
@@ -52,7 +60,7 @@
             }
         }
 
-        /* Mock color coding for now */
+        /* Mock color coding */
         .red { background-color: #ff4d4d; }
         .yellow { background-color: #ffeb3b; }
         .green { background-color: #4caf50; }
@@ -76,64 +84,39 @@
         </select>
     </div>
 
-    <div id="tableContainer"></div>
+    <div class="table-wrapper" id="tableContainer"></div>
 
     <script>
-        const mockData = {
-            vacaciones: {
-                inbound: {
-                    mañana: [3, 2, 0, 5, 4, 3, 1],
-                    tarde: [2, 1, 0, 3, 2, 1, 0],
-                    noche: [1, 0, 0, 2, 1, 0, 0]
-                },
-                outbound: {
-                    mañana: [5, 5, 4, 3, 3, 2, 2],
-                    tarde: [4, 4, 3, 2, 2, 1, 1],
-                    noche: [3, 3, 2, 2, 1, 1, 0]
-                },
-                icqa: {
-                    mañana: [2, 2, 2, 1, 1, 0, 0],
-                    tarde: [2, 1, 1, 1, 0, 0, 0],
-                    noche: [1, 1, 0, 0, 0, 0, 0]
-                }
-            },
-            asuntos: {
-                inbound: {
-                    mañana: [10, 9, 8, 7, 6, 5, 4],
-                    tarde: [9, 8, 7, 6, 5, 4, 3],
-                    noche: [8, 7, 6, 5, 4, 3, 2]
-                },
-                outbound: {
-                    mañana: [15, 14, 13, 12, 11, 10, 9],
-                    tarde: [14, 13, 12, 11, 10, 9, 8],
-                    noche: [13, 12, 11, 10, 9, 8, 7]
-                },
-                icqa: {
-                    mañana: [8, 7, 6, 5, 4, 3, 2],
-                    tarde: [7, 6, 5, 4, 3, 2, 1],
-                    noche: [6, 5, 4, 3, 2, 1, 0]
-                }
-            },
-            permiso: {
-                inbound: {
-                    mañana: [1, 0, 1, 0, 1, 0, 1],
-                    tarde: [0, 1, 0, 1, 0, 1, 0],
-                    noche: [1, 1, 1, 1, 0, 0, 0]
-                },
-                outbound: {
-                    mañana: [2, 2, 1, 1, 0, 0, 0],
-                    tarde: [1, 1, 1, 0, 0, 0, 0],
-                    noche: [0, 0, 0, 0, 0, 0, 0]
-                },
-                icqa: {
-                    mañana: [0, 1, 0, 1, 0, 1, 0],
-                    tarde: [1, 0, 1, 0, 1, 0, 1],
-                    noche: [0, 0, 0, 0, 0, 0, 0]
-                }
-            }
-        };
+        // Generate dates from June 28, 2025 to December 31, 2025
+        function generateDates() {
+            const startDate = new Date(2025, 5, 28); // Month is 0-indexed (5 = June)
+            const endDate = new Date(2025, 11, 31);
+            let dates = [];
 
-        const dates = ["Lun 01", "Mar 02", "Mié 03", "Jue 04", "Vie 05", "Sáb 06", "Dom 07"];
+            while (startDate <= endDate) {
+                const day = startDate.getDate().toString().padStart(2, '0');
+                const month = (startDate.getMonth() + 1).toString().padStart(2, '0');
+                dates.push(`${day}/${month}`);
+                startDate.setDate(startDate.getDate() + 1);
+            }
+
+            return dates;
+        }
+
+        const dates = generateDates();
+
+        // Generate mock data dynamically
+        const mockData = {};
+        ['vacaciones', 'asuntos', 'permiso'].forEach(type => {
+            mockData[type] = {};
+            ['inbound', 'outbound', 'icqa'].forEach(area => {
+                mockData[type][area] = {
+                    mañana: Array.from({ length: dates.length }, () => Math.floor(Math.random() * 6)),
+                    tarde: Array.from({ length: dates.length }, () => Math.floor(Math.random() * 6)),
+                    noche: Array.from({ length: dates.length }, () => Math.floor(Math.random() * 6))
+                };
+            });
+        });
 
         function updateTable() {
             const type = document.getElementById('typeSelector').value;
