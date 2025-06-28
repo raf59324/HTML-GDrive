@@ -3,11 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Semáforo de Disponibilidad - Large Dataset</title>
+    <title>Semáforo de Disponibilidad - Mejorado</title>
     <style>
         body {
             font-family: Arial, sans-serif;
             margin: 20px;
+            font-size: 18px; /* Bigger base text */
         }
 
         h1 {
@@ -24,8 +25,8 @@
         }
 
         select {
-            padding: 10px;
-            font-size: 16px;
+            padding: 12px;
+            font-size: 18px;
         }
 
         .table-wrapper {
@@ -42,7 +43,7 @@
 
         th, td {
             border: 1px solid #ddd;
-            padding: 8px;
+            padding: 14px 18px; /* Bigger cells */
             text-align: center;
             white-space: nowrap;
         }
@@ -54,10 +55,12 @@
             z-index: 2;
         }
 
-        @media (max-width: 600px) {
-            table, th, td {
-                font-size: 12px;
-            }
+        /* Sticky first column */
+        th:first-child, td:first-child {
+            position: sticky;
+            left: 0;
+            background-color: #e0e0e0; /* Contrast color for frozen column */
+            z-index: 3;
         }
 
         /* Mock color coding */
@@ -87,9 +90,8 @@
     <div class="table-wrapper" id="tableContainer"></div>
 
     <script>
-        // Generate dates from June 28, 2025 to December 31, 2025
         function generateDates() {
-            const startDate = new Date(2025, 5, 28); // Month is 0-indexed (5 = June)
+            const startDate = new Date(2025, 5, 28); // June 28, 2025
             const endDate = new Date(2025, 11, 31);
             let dates = [];
 
@@ -105,7 +107,7 @@
 
         const dates = generateDates();
 
-        // Generate mock data dynamically
+        // Generate mock data
         const mockData = {};
         ['vacaciones', 'asuntos', 'permiso'].forEach(type => {
             mockData[type] = {};
