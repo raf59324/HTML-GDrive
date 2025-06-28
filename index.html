@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Semáforo de Disponibilidad - Celdas Cuadradas</title>
+    <title>Semáforo de Disponibilidad - Mejorado</title>
     <style>
         body {
             font-family: Arial, sans-serif;
             margin: 20px;
-            font-size: 18px; /* Large font size stays */
+            font-size: 18px;
         }
 
         h1 {
@@ -43,11 +43,12 @@
 
         th, td {
             border: 1px solid #ddd;
-            width: 50px;  /* Fixed width */
-            height: 50px; /* Fixed height to make cells square */
+            width: 60px;  /* Slightly larger */
+            height: 60px; /* Keep square cells */
             text-align: center;
             white-space: nowrap;
             font-size: 18px;
+            padding: 0;
         }
 
         th {
@@ -63,6 +64,24 @@
             left: 0;
             background-color: #e0e0e0;
             z-index: 3;
+        }
+
+        /* Date header styles */
+        .date-header {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .date-day {
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .date-weekday {
+            font-size: 12px;
+            color: #555;
         }
 
         /* Mock color coding */
@@ -98,9 +117,10 @@
             let dates = [];
 
             while (startDate <= endDate) {
-                const day = startDate.getDate().toString().padStart(2, '0');
-                const month = (startDate.getMonth() + 1).toString().padStart(2, '0');
-                dates.push(`${day}/${month}`);
+                const day = startDate.getDate();
+                const month = startDate.toLocaleString('es-ES', { month: 'short' });
+                const weekday = startDate.toLocaleString('es-ES', { weekday: 'long' });
+                dates.push({ day, month, weekday });
                 startDate.setDate(startDate.getDate() + 1);
             }
 
@@ -129,7 +149,14 @@
 
             let table = '<table><thead><tr><th>Turno</th>';
             dates.forEach(date => {
-                table += `<th>${date}</th>`;
+                table += `
+                    <th>
+                        <div class="date-header">
+                            <div class="date-day">${date.day} ${capitalizeFirst(date.month)}</div>
+                            <div class="date-weekday">${capitalizeFirst(date.weekday)}</div>
+                        </div>
+                    </th>
+                `;
             });
             table += '</tr></thead><tbody>';
 
@@ -146,6 +173,10 @@
 
             table += '</tbody></table>';
             document.getElementById('tableContainer').innerHTML = table;
+        }
+
+        function capitalizeFirst(str) {
+            return str.charAt(0).toUpperCase() + str.slice(1);
         }
 
         window.onload = updateTable;
