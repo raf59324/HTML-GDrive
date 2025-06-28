@@ -1,35 +1,168 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
-    <title>Google Sheet Data Example</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Semáforo de Disponibilidad</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        select {
+            padding: 10px;
+            font-size: 16px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            overflow-x: auto;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+
+        th {
+            background-color: #f4f4f4;
+            position: sticky;
+            top: 0;
+        }
+
+        @media (max-width: 600px) {
+            table, th, td {
+                font-size: 12px;
+            }
+        }
+
+        /* Mock color coding for now */
+        .red { background-color: #ff4d4d; }
+        .yellow { background-color: #ffeb3b; }
+        .green { background-color: #4caf50; }
+    </style>
 </head>
 <body>
-    <h1>Google Sheet Data</h1>
-    <div id="data">Loading...</div>
+
+    <h1>Semáforo de Disponibilidad</h1>
+
+    <div class="controls">
+        <select id="typeSelector" onchange="updateTable()">
+            <option value="vacaciones">Vacaciones</option>
+            <option value="asuntos">Asuntos Propios</option>
+            <option value="permiso">Permiso no Retribuido</option>
+        </select>
+
+        <select id="areaSelector" onchange="updateTable()">
+            <option value="inbound">Inbound - RSP Inbound</option>
+            <option value="outbound">Outbound - RSP Outbound</option>
+            <option value="icqa">ICQA</option>
+        </select>
+    </div>
+
+    <div id="tableContainer"></div>
 
     <script>
-        const sheetID = '1t5MItERRUV1o2wenBDuJ13WYg3mLcokKzojy5_1g3uk';
-        const url = `https://docs.google.com/spreadsheets/d/${sheetID}/gviz/tq?tqx=out:json`;
+        const mockData = {
+            vacaciones: {
+                inbound: {
+                    mañana: [3, 2, 0, 5, 4, 3, 1],
+                    tarde: [2, 1, 0, 3, 2, 1, 0],
+                    noche: [1, 0, 0, 2, 1, 0, 0]
+                },
+                outbound: {
+                    mañana: [5, 5, 4, 3, 3, 2, 2],
+                    tarde: [4, 4, 3, 2, 2, 1, 1],
+                    noche: [3, 3, 2, 2, 1, 1, 0]
+                },
+                icqa: {
+                    mañana: [2, 2, 2, 1, 1, 0, 0],
+                    tarde: [2, 1, 1, 1, 0, 0, 0],
+                    noche: [1, 1, 0, 0, 0, 0, 0]
+                }
+            },
+            asuntos: {
+                inbound: {
+                    mañana: [10, 9, 8, 7, 6, 5, 4],
+                    tarde: [9, 8, 7, 6, 5, 4, 3],
+                    noche: [8, 7, 6, 5, 4, 3, 2]
+                },
+                outbound: {
+                    mañana: [15, 14, 13, 12, 11, 10, 9],
+                    tarde: [14, 13, 12, 11, 10, 9, 8],
+                    noche: [13, 12, 11, 10, 9, 8, 7]
+                },
+                icqa: {
+                    mañana: [8, 7, 6, 5, 4, 3, 2],
+                    tarde: [7, 6, 5, 4, 3, 2, 1],
+                    noche: [6, 5, 4, 3, 2, 1, 0]
+                }
+            },
+            permiso: {
+                inbound: {
+                    mañana: [1, 0, 1, 0, 1, 0, 1],
+                    tarde: [0, 1, 0, 1, 0, 1, 0],
+                    noche: [1, 1, 1, 1, 0, 0, 0]
+                },
+                outbound: {
+                    mañana: [2, 2, 1, 1, 0, 0, 0],
+                    tarde: [1, 1, 1, 0, 0, 0, 0],
+                    noche: [0, 0, 0, 0, 0, 0, 0]
+                },
+                icqa: {
+                    mañana: [0, 1, 0, 1, 0, 1, 0],
+                    tarde: [1, 0, 1, 0, 1, 0, 1],
+                    noche: [0, 0, 0, 0, 0, 0, 0]
+                }
+            }
+        };
 
-        fetch(url)
-            .then(response => response.text())
-            .then(data => {
-                const json = JSON.parse(data.substr(47).slice(0, -2));
-                let table = '<table border="1" cellpadding="5" cellspacing="0">';
-                json.table.rows.forEach((row, rowIndex) => {
-                    table += '<tr>';
-                    row.c.forEach(cell => {
-                        table += `<td>${cell ? cell.v : ''}</td>`;
-                    });
-                    table += '</tr>';
-                });
-                table += '</table>';
-                document.getElementById('data').innerHTML = table;
-            })
-            .catch(error => {
-                document.getElementById('data').innerText = 'Error loading data.';
-                console.error('Error:', error);
+        const dates = ["Lun 01", "Mar 02", "Mié 03", "Jue 04", "Vie 05", "Sáb 06", "Dom 07"];
+
+        function updateTable() {
+            const type = document.getElementById('typeSelector').value;
+            const area = document.getElementById('areaSelector').value;
+            const data = mockData[type][area];
+
+            let table = '<table><thead><tr><th>Turno</th>';
+            dates.forEach(date => {
+                table += `<th>${date}</th>`;
             });
+            table += '</tr></thead><tbody>';
+
+            for (const shift in data) {
+                table += `<tr><td>${shift.charAt(0).toUpperCase() + shift.slice(1)}</td>`;
+                data[shift].forEach(value => {
+                    let colorClass = 'green';
+                    if (value <= 1) colorClass = 'red';
+                    else if (value <= 3) colorClass = 'yellow';
+                    table += `<td class="${colorClass}">${value}</td>`;
+                });
+                table += '</tr>';
+            }
+
+            table += '</tbody></table>';
+            document.getElementById('tableContainer').innerHTML = table;
+        }
+
+        window.onload = updateTable;
     </script>
+
 </body>
 </html>
