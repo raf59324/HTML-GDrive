@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Semáforo de Disponibilidad - Mejorado</title>
+    <title>Semáforo de Disponibilidad - Celdas Cuadradas</title>
     <style>
         body {
             font-family: Arial, sans-serif;
             margin: 20px;
-            font-size: 18px; /* Bigger base text */
+            font-size: 18px; /* Large font size stays */
         }
 
         h1 {
@@ -43,9 +43,11 @@
 
         th, td {
             border: 1px solid #ddd;
-            padding: 14px 18px; /* Bigger cells */
+            width: 50px;  /* Fixed width */
+            height: 50px; /* Fixed height to make cells square */
             text-align: center;
             white-space: nowrap;
+            font-size: 18px;
         }
 
         th {
@@ -59,7 +61,7 @@
         th:first-child, td:first-child {
             position: sticky;
             left: 0;
-            background-color: #e0e0e0; /* Contrast color for frozen column */
+            background-color: #e0e0e0;
             z-index: 3;
         }
 
