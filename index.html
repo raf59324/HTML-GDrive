@@ -153,18 +153,22 @@
         function updateTable() {
             const areaSelector = document.getElementById('areaSelector');
             const typeSelector = document.getElementById('typeSelector');
-
+        
             const area = areaSelector.value;
             const type = typeSelector.value;
-
-            // If no area is selected, hide the table
+        
+            // If no area is selected, show the message
             if (!area) {
-                document.getElementById('tableContainer').innerHTML = '';
+                document.getElementById('tableContainer').innerHTML = `
+                    <div style="text-align: center; font-size: 20px; color: #555; padding: 20px;">
+                        Por favor selecciona tu área para consultar el semáforo.
+                    </div>
+                `;
                 return;
             }
-
+        
             const data = mockData[type][area];
-
+        
             let table = '<table><thead><tr><th>Turno</th>';
             dates.forEach(date => {
                 table += `
@@ -177,7 +181,7 @@
                 `;
             });
             table += '</tr></thead><tbody>';
-
+        
             for (const shift in data) {
                 table += `<tr><td>${capitalizeFirst(shift)}</td>`;
                 data[shift].forEach(value => {
@@ -188,7 +192,7 @@
                 });
                 table += '</tr>';
             }
-
+        
             table += '</tbody></table>';
             document.getElementById('tableContainer').innerHTML = table;
         }
