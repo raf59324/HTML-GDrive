@@ -51,6 +51,11 @@
             padding: 0;
         }
 
+        th:first-child, td:first-child {
+            width: 100px; /* Wider first column for "Turno" */
+            min-width: 100px;
+        }
+
         th {
             background-color: #f4f4f4;
             position: sticky;
@@ -95,16 +100,18 @@
     <h1>Semáforo de Disponibilidad</h1>
 
     <div class="controls">
-        <select id="typeSelector" onchange="updateTable()">
-            <option value="vacaciones">Vacaciones</option>
-            <option value="asuntos">Asuntos Propios</option>
-            <option value="permiso">Permiso no Retribuido</option>
-        </select>
-
+        <!-- Area selector appears first -->
         <select id="areaSelector" onchange="updateTable()">
+            <option value="" selected disabled>SELECCIONA TU ÁREA</option>
             <option value="inbound">Inbound - RSP Inbound</option>
             <option value="outbound">Outbound - RSP Outbound</option>
             <option value="icqa">ICQA</option>
+        </select>
+
+        <select id="typeSelector" onchange="updateTable()">
+            <option value="vacaciones" selected>Vacaciones</option>
+            <option value="asuntos">Asuntos Propios</option>
+            <option value="permiso">Permiso no Retribuido</option>
         </select>
     </div>
 
@@ -116,7 +123,7 @@
             const endDate = new Date(2025, 11, 31);
             let dates = [];
             const shortMonths = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-        
+
             while (startDate <= endDate) {
                 const day = startDate.getDate();
                 const month = shortMonths[startDate.getMonth()];
@@ -124,7 +131,7 @@
                 dates.push({ day, month, weekday });
                 startDate.setDate(startDate.getDate() + 1);
             }
-        
+
             return dates;
         }
 
@@ -144,8 +151,18 @@
         });
 
         function updateTable() {
-            const type = document.getElementById('typeSelector').value;
-            const area = document.getElementById('areaSelector').value;
+            const areaSelector = document.getElementById('areaSelector');
+            const typeSelector = document.getElementById('typeSelector');
+
+            const area = areaSelector.value;
+            const type = typeSelector.value;
+
+            // If no area is selected, hide the table
+            if (!area) {
+                document.getElementById('tableContainer').innerHTML = '';
+                return;
+            }
+
             const data = mockData[type][area];
 
             let table = '<table><thead><tr><th>Turno</th>';
@@ -153,7 +170,7 @@
                 table += `
                     <th>
                         <div class="date-header">
-                            <div class="date-day">${date.day} ${capitalizeFirst(date.month)}</div>
+                            <div class="date-day">${date.day} ${date.month}</div>
                             <div class="date-weekday">${capitalizeFirst(date.weekday)}</div>
                         </div>
                     </th>
@@ -162,7 +179,7 @@
             table += '</tr></thead><tbody>';
 
             for (const shift in data) {
-                table += `<tr><td>${shift.charAt(0).toUpperCase() + shift.slice(1)}</td>`;
+                table += `<tr><td>${capitalizeFirst(shift)}</td>`;
                 data[shift].forEach(value => {
                     let colorClass = 'green';
                     if (value <= 1) colorClass = 'red';
@@ -180,7 +197,9 @@
             return str.charAt(0).toUpperCase() + str.slice(1);
         }
 
-        window.onload = updateTable;
+        window.onload = () => {
+            document.getElementById('tableContainer').innerHTML = '';
+        };
     </script>
 
 </body>
