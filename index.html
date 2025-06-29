@@ -176,44 +176,33 @@
             }
         }
 
-        async function fetchUpdateTime() {
+       async function fetchUpdateTime() {
             const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&sheet=DATA`;
         
             try {
                 const response = await fetch(url);
                 const text = await response.text();
                 const json = JSON.parse(text.substr(47).slice(0, -2));
-                const rawCell = json.table.rows[1].c[0];
+                const rawCell = json.table.rows[1].c[0]; // A2
         
-                if (!rawCell || !rawCell.v) {
+                if (!rawCell || !rawCell.f) {
                     document.getElementById('updateInfo').innerHTML = '';
                     return;
                 }
         
-                // Google usually sends a Date object in ISO string format
-                let updateDate;
-                if (typeof rawCell.v === 'string' && rawCell.v.startsWith('Date')) {
-                    // Example format: Date(2025,5,29,20,0,0)
-                    const dateParts = rawCell.v.match(/\d+/g).map(Number);
-                    // Remember: months are zero-indexed in JavaScript
-                    updateDate = new Date(dateParts[0], dateParts[1], dateParts[2], dateParts[3], dateParts[4], dateParts[5]);
-                } else {
-                    // If Google returns a regular date string or Date object
-                    updateDate = new Date(rawCell.v);
-                }
+                // Use the formatted string directly
+                const formattedRaw = rawCell.f; // Example: "29/06/2025 20:00:00"
+                const [datePart, timePart] = formattedRaw.split(' ');
+                const [day, month, year] = datePart.split('/');
         
-                displayUpdateTime(updateDate);
+                const shortMonths = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+                const formattedDate = `${parseInt(day)} de ${shortMonths[parseInt(month) - 1]} a las ${timePart.substring(0, 5)}`;
+        
+                document.getElementById('updateInfo').innerHTML = `El Semáforo ha sido actualizado el ${formattedDate}`;
             } catch (error) {
                 console.error('Error fetching update time:', error);
                 document.getElementById('updateInfo').innerHTML = '';
             }
-        }
-        
-        function displayUpdateTime(updateDate) {
-            const shortMonths = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-            const formattedDate = `${updateDate.getDate()} de ${shortMonths[updateDate.getMonth()]} a las ${updateDate.getHours().toString().padStart(2, '0')}:${updateDate.getMinutes().toString().padStart(2, '0')}`;
-        
-            document.getElementById('updateInfo').innerHTML = `El Semáforo ha sido actualizado el ${formattedDate}`;
         }
 
         function displayTable(data, selectedArea) {
