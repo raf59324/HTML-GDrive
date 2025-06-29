@@ -178,28 +178,41 @@
 
         async function fetchUpdateTime() {
             const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&sheet=DATA`;
-
+        
             try {
                 const response = await fetch(url);
                 const text = await response.text();
                 const json = JSON.parse(text.substr(47).slice(0, -2));
-                const updateDateTime = json.table.rows[1].c[0].v; // A2
-
-                displayUpdateTime(updateDateTime);
+                const rawCell = json.table.rows[1].c[0];
+        
+                if (!rawCell || !rawCell.v) {
+                    document.getElementById('updateInfo').innerHTML = '';
+                    return;
+                }
+        
+                // Google usually sends a Date object in ISO string format
+                let updateDate;
+                if (typeof rawCell.v === 'string' && rawCell.v.startsWith('Date')) {
+                    // Example format: Date(2025,5,29,20,0,0)
+                    const dateParts = rawCell.v.match(/\d+/g).map(Number);
+                    // Remember: months are zero-indexed in JavaScript
+                    updateDate = new Date(dateParts[0], dateParts[1], dateParts[2], dateParts[3], dateParts[4], dateParts[5]);
+                } else {
+                    // If Google returns a regular date string or Date object
+                    updateDate = new Date(rawCell.v);
+                }
+        
+                displayUpdateTime(updateDate);
             } catch (error) {
                 console.error('Error fetching update time:', error);
                 document.getElementById('updateInfo').innerHTML = '';
             }
         }
-
-        function displayUpdateTime(updateDateTime) {
-            const [datePart, timePart] = updateDateTime.split(' ');
-            const [day, month, year] = datePart.split('/');
-            const dateObj = new Date(`${year}-${month}-${day}T${timePart}`);
-
+        
+        function displayUpdateTime(updateDate) {
             const shortMonths = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-            const formattedDate = `${parseInt(day)} de ${shortMonths[dateObj.getMonth()]} a las ${timePart.substring(0, 5)}`;
-
+            const formattedDate = `${updateDate.getDate()} de ${shortMonths[updateDate.getMonth()]} a las ${updateDate.getHours().toString().padStart(2, '0')}:${updateDate.getMinutes().toString().padStart(2, '0')}`;
+        
             document.getElementById('updateInfo').innerHTML = `El Semáforo ha sido actualizado el ${formattedDate}`;
         }
 
