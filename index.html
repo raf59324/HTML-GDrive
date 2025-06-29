@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -48,7 +49,8 @@
             min-width: 600px;
         }
 
-        th, td {
+        th,
+        td {
             border: 1px solid #ddd;
             width: 60px;
             height: 60px;
@@ -58,7 +60,8 @@
             padding: 0;
         }
 
-        th:first-child, td:first-child {
+        th:first-child,
+        td:first-child {
             width: 100px;
             min-width: 100px;
         }
@@ -70,7 +73,8 @@
             z-index: 2;
         }
 
-        th:first-child, td:first-child {
+        th:first-child,
+        td:first-child {
             position: sticky;
             left: 0;
             background-color: #e0e0e0;
@@ -95,6 +99,7 @@
         }
     </style>
 </head>
+
 <body>
 
     <h1>Semáforo de Disponibilidad</h1>
@@ -133,7 +138,7 @@
     </div>
 
     <script>
-        const sheetId = '1t5MItERRUV1o2wenBDuJ13WYg3mLcokKzojy5_1g3uk'; // <-- Replace with your actual Google Sheet ID
+        const sheetId = '1t5MItERRUV1o2wenBDuJ13WYg3mLcokKzojy5_1g3uk'; // <-- Your actual Google Sheet ID
 
         async function fetchAndDisplayData() {
             const contract = document.getElementById('contractSelector').value;
@@ -176,28 +181,26 @@
             }
         }
 
-       async function fetchUpdateTime() {
-            const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&sheet=DATA`;
-        
+        async function fetchUpdateTime() {
+            const query = encodeURIComponent('SELECT A LIMIT 1 OFFSET 1'); // Get cell A2 directly
+            const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&sheet=DATA&tq=${query}`;
+
             try {
                 const response = await fetch(url);
                 const text = await response.text();
                 const json = JSON.parse(text.substr(47).slice(0, -2));
-                const rawCell = json.table.rows[1].c[0]; // A2
-        
-                if (!rawCell || !rawCell.f) {
+                const rawCell = json.table.rows[0].c[0]; // Cell A2
+
+                if (!rawCell || !rawCell.v) {
                     document.getElementById('updateInfo').innerHTML = '';
                     return;
                 }
-        
-                // Use the formatted string directly
-                const formattedRaw = rawCell.f; // Example: "29/06/2025 20:00:00"
-                const [datePart, timePart] = formattedRaw.split(' ');
-                const [day, month, year] = datePart.split('/');
-        
+
+                const updateDate = new Date(rawCell.v);
+
                 const shortMonths = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-                const formattedDate = `${parseInt(day)} de ${shortMonths[parseInt(month) - 1]} a las ${timePart.substring(0, 5)}`;
-        
+                const formattedDate = `${updateDate.getDate()} de ${shortMonths[updateDate.getMonth()]} a las ${updateDate.getHours().toString().padStart(2, '0')}:${updateDate.getMinutes().toString().padStart(2, '0')}`;
+
                 document.getElementById('updateInfo').innerHTML = `El Semáforo ha sido actualizado el ${formattedDate}`;
             } catch (error) {
                 console.error('Error fetching update time:', error);
@@ -260,4 +263,5 @@
     </script>
 
 </body>
+
 </html>
