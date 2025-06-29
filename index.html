@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Semáforo de Disponibilidad - Mejorado</title>
+    <title>Semáforo de Disponibilidad</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -43,8 +43,8 @@
 
         th, td {
             border: 1px solid #ddd;
-            width: 60px;  /* Slightly larger */
-            height: 60px; /* Keep square cells */
+            width: 60px;
+            height: 60px;
             text-align: center;
             white-space: nowrap;
             font-size: 18px;
@@ -52,7 +52,7 @@
         }
 
         th:first-child, td:first-child {
-            width: 100px; /* Wider first column for "Turno" */
+            width: 100px;
             min-width: 100px;
         }
 
@@ -63,7 +63,6 @@
             z-index: 2;
         }
 
-        /* Sticky first column */
         th:first-child, td:first-child {
             position: sticky;
             left: 0;
@@ -71,7 +70,6 @@
             z-index: 3;
         }
 
-        /* Date header styles */
         .date-header {
             display: flex;
             flex-direction: column;
@@ -88,11 +86,6 @@
             font-size: 12px;
             color: #555;
         }
-
-        /* Mock color coding */
-        .red { background-color: #ff4d4d; }
-        .yellow { background-color: #ffeb3b; }
-        .green { background-color: #4caf50; }
     </style>
 </head>
 <body>
@@ -100,64 +93,33 @@
     <h1>Semáforo de Disponibilidad</h1>
 
     <div class="controls">
-        <!-- Area selector appears first -->
-        <select id="areaSelector" onchange="updateTable()">
+        <select id="areaSelector" onchange="fetchAndDisplayData()">
             <option value="" selected disabled>SELECCIONA TU ÁREA</option>
-            <option value="inbound">Inbound - RSP Inbound</option>
-            <option value="outbound">Outbound - RSP Outbound</option>
-            <option value="icqa">ICQA</option>
+            <option value="Inbound - RSP Inbound">Inbound - RSP Inbound</option>
+            <option value="Outbound - RSP Outbound">Outbound - RSP Outbound</option>
+            <option value="ICQA">ICQA</option>
         </select>
 
-        <select id="typeSelector" onchange="updateTable()">
-            <option value="vacaciones" selected>Vacaciones</option>
-            <option value="asuntos">Asuntos Propios</option>
-            <option value="permiso">Permiso no Retribuido</option>
+        <select id="typeSelector" onchange="fetchAndDisplayData()">
+            <option value="Vacaciones" selected>Vacaciones</option>
+            <option value="AP">Asuntos Propios</option>
+            <option value="PNR">Permiso no Retribuido</option>
         </select>
     </div>
 
-    <div class="table-wrapper" id="tableContainer"></div>
+    <div class="table-wrapper" id="tableContainer">
+        <div style="text-align: center; font-size: 20px; color: #555; padding: 20px;">
+            Por favor selecciona tu área para consultar el semáforo.
+        </div>
+    </div>
 
     <script>
-        function generateDates() {
-            const startDate = new Date(2025, 5, 28); // June 28, 2025
-            const endDate = new Date(2025, 11, 31);
-            let dates = [];
-            const shortMonths = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+        const sheetId = 'YOUR_GOOGLE_SHEET_ID_HERE'; // <---- Replace with your real sheet ID
 
-            while (startDate <= endDate) {
-                const day = startDate.getDate();
-                const month = shortMonths[startDate.getMonth()];
-                const weekday = startDate.toLocaleString('es-ES', { weekday: 'long' });
-                dates.push({ day, month, weekday });
-                startDate.setDate(startDate.getDate() + 1);
-            }
+        async function fetchAndDisplayData() {
+            const area = document.getElementById('areaSelector').value;
+            const type = document.getElementById('typeSelector').value;
 
-            return dates;
-        }
-
-        const dates = generateDates();
-
-        // Generate mock data
-        const mockData = {};
-        ['vacaciones', 'asuntos', 'permiso'].forEach(type => {
-            mockData[type] = {};
-            ['inbound', 'outbound', 'icqa'].forEach(area => {
-                mockData[type][area] = {
-                    mañana: Array.from({ length: dates.length }, () => Math.floor(Math.random() * 6)),
-                    tarde: Array.from({ length: dates.length }, () => Math.floor(Math.random() * 6)),
-                    noche: Array.from({ length: dates.length }, () => Math.floor(Math.random() * 6))
-                };
-            });
-        });
-
-        function updateTable() {
-            const areaSelector = document.getElementById('areaSelector');
-            const typeSelector = document.getElementById('typeSelector');
-        
-            const area = areaSelector.value;
-            const type = typeSelector.value;
-        
-            // If no area is selected, show the message
             if (!area) {
                 document.getElementById('tableContainer').innerHTML = `
                     <div style="text-align: center; font-size: 20px; color: #555; padding: 20px;">
@@ -166,33 +128,71 @@
                 `;
                 return;
             }
-        
-            const data = mockData[type][area];
-        
+
+            const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&sheet=${type}`;
+
+            try {
+                const response = await fetch(url);
+                const text = await response.text();
+                const json = JSON.parse(text.substr(47).slice(0, -2));
+                const data = json.table.rows.map(row => row.c.map(cell => cell ? cell.v : ''));
+
+                displayTable(data, area);
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                document.getElementById('tableContainer').innerHTML = `
+                    <div style="text-align: center; font-size: 20px; color: red; padding: 20px;">
+                        Error al cargar los datos. Inténtalo de nuevo.
+                    </div>
+                `;
+            }
+        }
+
+        function displayTable(data, selectedArea) {
+            const headerRow = data[0].slice(2);
+            const dateHeaders = headerRow.map(dateString => {
+                const [day, month, year] = dateString.split('/');
+                const dateObj = new Date(`${year}-${month}-${day}`);
+                const shortMonths = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+                const weekday = dateObj.toLocaleString('es-ES', { weekday: 'long' });
+                return {
+                    day: parseInt(day),
+                    month: shortMonths[dateObj.getMonth()],
+                    weekday: capitalizeFirst(weekday)
+                };
+            });
+
+            const filteredData = data.slice(1).filter(row => row[0] === selectedArea);
+
             let table = '<table><thead><tr><th>Turno</th>';
-            dates.forEach(date => {
+            dateHeaders.forEach(date => {
                 table += `
                     <th>
                         <div class="date-header">
                             <div class="date-day">${date.day} ${date.month}</div>
-                            <div class="date-weekday">${capitalizeFirst(date.weekday)}</div>
+                            <div class="date-weekday">${date.weekday}</div>
                         </div>
                     </th>
                 `;
             });
             table += '</tr></thead><tbody>';
-        
-            for (const shift in data) {
-                table += `<tr><td>${capitalizeFirst(shift)}</td>`;
-                data[shift].forEach(value => {
-                    let colorClass = 'green';
-                    if (value <= 1) colorClass = 'red';
-                    else if (value <= 3) colorClass = 'yellow';
-                    table += `<td class="${colorClass}">${value}</td>`;
+
+            const shiftMap = { 'e': 'Mañana', 'l': 'Tarde', 'n': 'Noche' };
+
+            filteredData.forEach(row => {
+                const shiftCode = row[1];
+                const shiftName = shiftMap[shiftCode] || shiftCode;
+
+                table += `<tr><td>${shiftName}</td>`;
+
+                row.slice(2).forEach(cellContent => {
+                    const [color, value] = cellContent.split('|');
+                    table += `<td style="background-color: ${color};">${value}</td>`;
                 });
+
                 table += '</tr>';
-            }
-        
+            });
+
             table += '</tbody></table>';
             document.getElementById('tableContainer').innerHTML = table;
         }
@@ -200,14 +200,6 @@
         function capitalizeFirst(str) {
             return str.charAt(0).toUpperCase() + str.slice(1);
         }
-
-        window.onload = () => {
-            document.getElementById('tableContainer').innerHTML = `
-        <div style="text-align: center; font-size: 20px; color: #555; padding: 20px;">
-            Por favor selecciona tu área para consultar el semáforo.
-        </div>
-    `;
-        };
     </script>
 
 </body>
