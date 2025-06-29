@@ -184,24 +184,22 @@
         async function fetchUpdateTime() {
             const query = encodeURIComponent('SELECT A LIMIT 1 OFFSET 1'); // Get cell A2 directly
             const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&sheet=DATA&tq=${query}`;
-
+        
             try {
                 const response = await fetch(url);
                 const text = await response.text();
                 const json = JSON.parse(text.substr(47).slice(0, -2));
                 const rawCell = json.table.rows[0].c[0]; // Cell A2
-
+        
                 if (!rawCell || !rawCell.v) {
                     document.getElementById('updateInfo').innerHTML = '';
                     return;
                 }
-
-                const updateDate = new Date(rawCell.v);
-
-                const shortMonths = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-                const formattedDate = `${updateDate.getDate()} de ${shortMonths[updateDate.getMonth()]} a las ${updateDate.getHours().toString().padStart(2, '0')}:${updateDate.getMinutes().toString().padStart(2, '0')}`;
-
-                document.getElementById('updateInfo').innerHTML = `El Semáforo ha sido actualizado el ${formattedDate}`;
+        
+                // The string should already be like "29/06/2025 20:00"
+                const formattedText = rawCell.v;
+        
+                document.getElementById('updateInfo').innerHTML = `El Semáforo ha sido actualizado el ${formattedText}`;
             } catch (error) {
                 console.error('Error fetching update time:', error);
                 document.getElementById('updateInfo').innerHTML = '';
