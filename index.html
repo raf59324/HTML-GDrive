@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Semáforo de Disponibilidad</title>
+    <title>Semáforo de Disponibilidad - Contrato Selección</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -93,6 +93,14 @@
     <h1>Semáforo de Disponibilidad</h1>
 
     <div class="controls">
+        <!-- New Contract Selector -->
+        <select id="contractSelector" onchange="fetchAndDisplayData()">
+            <option value="" selected disabled>SELECCIONA TU CONTRATO</option>
+            <option value="Regular">Regular</option>
+            <option value="Fijo Discontinuo">Fijo Discontinuo</option>
+        </select>
+
+        <!-- Area Selector -->
         <select id="areaSelector" onchange="fetchAndDisplayData()">
             <option value="" selected disabled>SELECCIONA TU ÁREA</option>
             <option value="Inbound - RSP Inbound">Inbound - RSP Inbound</option>
@@ -100,6 +108,7 @@
             <option value="ICQA">ICQA</option>
         </select>
 
+        <!-- Balance Type Selector -->
         <select id="typeSelector" onchange="fetchAndDisplayData()">
             <option value="Vacaciones" selected>Vacaciones</option>
             <option value="AP">Asuntos Propios</option>
@@ -109,27 +118,34 @@
 
     <div class="table-wrapper" id="tableContainer">
         <div style="text-align: center; font-size: 20px; color: #555; padding: 20px;">
-            Por favor selecciona tu área para consultar el semáforo.
+            Por favor selecciona tu contrato y tu área para consultar el semáforo.
         </div>
     </div>
 
     <script>
-        const sheetId = '1t5MItERRUV1o2wenBDuJ13WYg3mLcokKzojy5_1g3uk'; // <---- Replace with your real sheet ID
+        const sheetId = 'YOUR_GOOGLE_SHEET_ID_HERE'; // <--- Replace with your real Google Sheet ID
 
         async function fetchAndDisplayData() {
+            const contract = document.getElementById('contractSelector').value;
             const area = document.getElementById('areaSelector').value;
             const type = document.getElementById('typeSelector').value;
 
-            if (!area) {
+            if (!contract || !area) {
                 document.getElementById('tableContainer').innerHTML = `
                     <div style="text-align: center; font-size: 20px; color: #555; padding: 20px;">
-                        Por favor selecciona tu área para consultar el semáforo.
+                        Por favor selecciona tu contrato y tu área para consultar el semáforo.
                     </div>
                 `;
                 return;
             }
 
-            const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&sheet=${type}`;
+            // Determine which sheet to fetch
+            let sheetToFetch = type;
+            if (contract === 'Fijo Discontinuo' && type === 'Vacaciones') {
+                sheetToFetch = 'VacacionesDPC';
+            }
+
+            const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&sheet=${sheetToFetch}`;
 
             try {
                 const response = await fetch(url);
