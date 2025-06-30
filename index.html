@@ -137,78 +137,23 @@
         </div>
     </div>
 
-    <script>
-        const sheetId = '1t5MItERRUV1o2wenBDuJ13WYg3mLcokKzojy5_1g3uk'; // <-- Your actual Google Sheet ID
-
-        async function fetchAndDisplayData() {
-            const contract = document.getElementById('contractSelector').value;
-            const area = document.getElementById('areaSelector').value;
-            const type = document.getElementById('typeSelector').value;
-
-            if (!contract || !area) {
-                document.getElementById('tableContainer').innerHTML = `
-                    <div style="text-align: center; font-size: 20px; color: #555; padding: 20px;">
-                        Por favor selecciona tu contrato y tu área para consultar el semáforo.
-                    </div>
-                `;
-                document.getElementById('updateInfo').innerHTML = '';
-                return;
-            }
-
-            let sheetToFetch = type;
-            if (contract === 'Fijo Discontinuo' && type === 'Vacaciones') {
-                sheetToFetch = 'VacacionesDPC';
-            }
-
-            const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&sheet=${sheetToFetch}`;
-
-            try {
-                const response = await fetch(url);
-                const text = await response.text();
-                const json = JSON.parse(text.substr(47).slice(0, -2));
-                const data = json.table.rows.map(row => row.c.map(cell => cell ? cell.v : ''));
-
-                displayTable(data, area);
-                fetchUpdateTime();
-            } catch (error) {
-                console.error('Error fetching data:', error);
-                document.getElementById('tableContainer').innerHTML = `
-                    <div style="text-align: center; font-size: 20px; color: red; padding: 20px;">
-                        Error al cargar los datos. Inténtalo de nuevo.
-                    </div>
-                `;
-                document.getElementById('updateInfo').innerHTML = '';
-            }
-        }
-
-        async function fetchUpdateTime() {
-            const query = encodeURIComponent('SELECT A LIMIT 1 OFFSET 1'); // Get cell A2 directly
-            const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&sheet=DATA&tq=${query}`;
-        
-            try {
-                const response = await fetch(url);
-                const text = await response.text();
-                const json = JSON.parse(text.substr(47).slice(0, -2));
-                const rawCell = json.table.rows[0].c[0]; // Cell A2
-        
-                if (!rawCell || !rawCell.v) {
-                    document.getElementById('updateInfo').innerHTML = '';
-                    return;
-                }
-        
-                // The string should already be like "29/06/2025 20:00"
-                const formattedText = rawCell.v;
-        
-                document.getElementById('updateInfo').innerHTML = `El Semáforo ha sido actualizado el ${formattedText}`;
-            } catch (error) {
-                console.error('Error fetching update time:', error);
-                document.getElementById('updateInfo').innerHTML = '';
-            }
-        }
-
+   <script>
         function displayTable(data, selectedArea) {
             const headerRow = data[0].slice(2);
-            const dateHeaders = headerRow.map(dateString => {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const tomorrow = new Date(today);
+            tomorrow.setDate(today.getDate() + 1);
+    
+            // Filter columns starting from tomorrow
+            const filteredIndices = headerRow.map((dateString, index) => {
+                const [day, month, year] = dateString.split('/');
+                const dateObj = new Date(`${year}-${month}-${day}`);
+                return dateObj >= tomorrow ? index : -1;
+            }).filter(index => index !== -1);
+    
+            const filteredHeaderDates = filteredIndices.map(index => headerRow[index]);
+            const dateHeaders = filteredHeaderDates.map(dateString => {
                 const [day, month, year] = dateString.split('/');
                 const dateObj = new Date(`${year}-${month}-${day}`);
                 const shortMonths = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
@@ -219,9 +164,9 @@
                     weekday: capitalizeFirst(weekday)
                 };
             });
-
+    
             const filteredData = data.slice(1).filter(row => row[0] === selectedArea);
-
+    
             let table = '<table><thead><tr><th>Turno</th>';
             dateHeaders.forEach(date => {
                 table += `
@@ -234,31 +179,30 @@
                 `;
             });
             table += '</tr></thead><tbody>';
-
+    
             const shiftMap = { 'e': 'Mañana', 'l': 'Tarde', 'n': 'Noche' };
-
+    
             filteredData.forEach(row => {
                 const shiftCode = row[1];
                 const shiftName = shiftMap[shiftCode] || shiftCode;
-
+    
                 table += `<tr><td>${shiftName}</td>`;
-
-                row.slice(2).forEach(cellContent => {
+    
+                // Only display cells from tomorrow onwards
+                filteredIndices.forEach(index => {
+                    const cellContent = row[2 + index];
                     const [color, value] = cellContent.split('|');
                     table += `<td style="background-color: ${color};">${value}</td>`;
                 });
-
+    
                 table += '</tr>';
             });
-
+    
             table += '</tbody></table>';
             document.getElementById('tableContainer').innerHTML = table;
         }
-
-        function capitalizeFirst(str) {
-            return str.charAt(0).toUpperCase() + str.slice(1);
-        }
     </script>
+
 
 </body>
 
