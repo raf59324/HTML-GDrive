@@ -139,72 +139,82 @@
 
    <script>
         function displayTable(data, selectedArea) {
-            const headerRow = data[0].slice(2);
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            const tomorrow = new Date(today);
-            tomorrow.setDate(today.getDate() + 1);
-    
-            // Filter columns starting from tomorrow
-            const filteredIndices = headerRow.map((dateString, index) => {
-                const [day, month, year] = dateString.split('/');
-                const dateObj = new Date(`${year}-${month}-${day}`);
-                return dateObj >= tomorrow ? index : -1;
-            }).filter(index => index !== -1);
-    
-            const filteredHeaderDates = filteredIndices.map(index => headerRow[index]);
-            const dateHeaders = filteredHeaderDates.map(dateString => {
-                const [day, month, year] = dateString.split('/');
-                const dateObj = new Date(`${year}-${month}-${day}`);
-                const shortMonths = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-                const weekday = dateObj.toLocaleString('es-ES', { weekday: 'long' });
-                return {
-                    day: parseInt(day),
-                    month: shortMonths[dateObj.getMonth()],
-                    weekday: capitalizeFirst(weekday)
-                };
+    const headerRow = data[0].slice(2);
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
+
+    // Prepare date headers with filtering
+    const filteredIndices = [];
+    const dateHeaders = [];
+
+    headerRow.forEach((dateString, index) => {
+        const [day, month, year] = dateString.split('/');
+        const dateObj = new Date(`${year}-${month}-${day}`);
+
+        if (dateObj >= tomorrow) {  // Only from tomorrow onwards
+            filteredIndices.push(index);
+            const shortMonths = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+            const weekday = dateObj.toLocaleString('es-ES', { weekday: 'long' });
+
+            dateHeaders.push({
+                day: parseInt(day),
+                month: shortMonths[dateObj.getMonth()],
+                weekday: capitalizeFirst(weekday)
             });
-    
-            const filteredData = data.slice(1).filter(row => row[0] === selectedArea);
-    
-            let table = '<table><thead><tr><th>Turno</th>';
-            dateHeaders.forEach(date => {
-                table += `
-                    <th>
-                        <div class="date-header">
-                            <div class="date-day">${date.day} ${date.month}</div>
-                            <div class="date-weekday">${date.weekday}</div>
-                        </div>
-                    </th>
-                `;
-            });
-            table += '</tr></thead><tbody>';
-    
-            const shiftMap = { 'e': 'Mañana', 'l': 'Tarde', 'n': 'Noche' };
-    
-            filteredData.forEach(row => {
-                const shiftCode = row[1];
-                const shiftName = shiftMap[shiftCode] || shiftCode;
-    
-                table += `<tr><td>${shiftName}</td>`;
-    
-                // Only display cells from tomorrow onwards
-                filteredIndices.forEach(originalIndex => {
-                    const cellContent = row[2 + originalIndex] || '';
-                    let color = '';
-                    let value = '';
-                    if (cellContent.includes('|')) {
-                        [color, value] = cellContent.split('|');
-                    }
-                    table += `<td style="background-color: ${color};">${value}</td>`;
-                });
-    
-                table += '</tr>';
-            });
-    
-            table += '</tbody></table>';
-            document.getElementById('tableContainer').innerHTML = table;
         }
+    });
+
+    if (filteredIndices.length === 0) {
+        document.getElementById('tableContainer').innerHTML = `
+            <div style="text-align: center; font-size: 20px; color: #555; padding: 20px;">
+                No hay fechas futuras disponibles para mostrar.
+            </div>
+        `;
+        return;
+    }
+
+    const filteredData = data.slice(1).filter(row => row[0] === selectedArea);
+
+    let table = '<table><thead><tr><th>Turno</th>';
+    dateHeaders.forEach(date => {
+        table += `
+            <th>
+                <div class="date-header">
+                    <div class="date-day">${date.day} ${date.month}</div>
+                    <div class="date-weekday">${date.weekday}</div>
+                </div>
+            </th>
+        `;
+    });
+    table += '</tr></thead><tbody>';
+
+    const shiftMap = { 'e': 'Mañana', 'l': 'Tarde', 'n': 'Noche' };
+
+    filteredData.forEach(row => {
+        const shiftCode = row[1];
+        const shiftName = shiftMap[shiftCode] || shiftCode;
+
+        table += `<tr><td>${shiftName}</td>`;
+
+        filteredIndices.forEach(originalIndex => {
+            const cellContent = row[2 + originalIndex] || '';
+            let color = '';
+            let value = '';
+            if (cellContent.includes('|')) {
+                [color, value] = cellContent.split('|');
+            }
+            table += `<td style="background-color: ${color};">${value}</td>`;
+        });
+
+        table += '</tr>';
+    });
+
+    table += '</tbody></table>';
+    document.getElementById('tableContainer').innerHTML = table;
+}
     </script>
 
 
