@@ -138,7 +138,7 @@
     </div>
 
     <script>
-        const sheetId = '1t5MItERRUV1o2wenBDuJ13WYg3mLcokKzojy5_1g3uk'; // <-- Your actual Google Sheet ID
+        const sheetId = '1t5MItERRUV1o2wenBDuJ13WYg3mLcokKzojy5_1g3uk';
 
         async function fetchAndDisplayData() {
             const contract = document.getElementById('contractSelector').value;
@@ -146,11 +146,11 @@
             const type = document.getElementById('typeSelector').value;
 
             if (!contract || !area) {
-                document.getElementById('tableContainer').innerHTML = 
+                document.getElementById('tableContainer').innerHTML = `
                     <div style="text-align: center; font-size: 20px; color: #555; padding: 20px;">
                         Por favor selecciona tu contrato y tu área para consultar el semáforo.
                     </div>
-                ;
+                `;
                 document.getElementById('updateInfo').innerHTML = '';
                 return;
             }
@@ -160,7 +160,7 @@
                 sheetToFetch = 'VacacionesDPC';
             }
 
-            const url = https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&sheet=${sheetToFetch};
+            const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&sheet=${sheetToFetch}`;
 
             try {
                 const response = await fetch(url);
@@ -172,34 +172,32 @@
                 fetchUpdateTime();
             } catch (error) {
                 console.error('Error fetching data:', error);
-                document.getElementById('tableContainer').innerHTML = 
+                document.getElementById('tableContainer').innerHTML = `
                     <div style="text-align: center; font-size: 20px; color: red; padding: 20px;">
                         Error al cargar los datos. Inténtalo de nuevo.
                     </div>
-                ;
+                `;
                 document.getElementById('updateInfo').innerHTML = '';
             }
         }
 
         async function fetchUpdateTime() {
-            const query = encodeURIComponent('SELECT A LIMIT 1 OFFSET 1'); // Get cell A2 directly
-            const url = https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&sheet=DATA&tq=${query};
-        
+            const query = encodeURIComponent('SELECT A LIMIT 1 OFFSET 1');
+            const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&sheet=DATA&tq=${query}`;
+
             try {
                 const response = await fetch(url);
                 const text = await response.text();
                 const json = JSON.parse(text.substr(47).slice(0, -2));
-                const rawCell = json.table.rows[0].c[0]; // Cell A2
-        
+                const rawCell = json.table.rows[0].c[0];
+
                 if (!rawCell || !rawCell.v) {
                     document.getElementById('updateInfo').innerHTML = '';
                     return;
                 }
-        
-                // The string should already be like "29/06/2025 20:00"
+
                 const formattedText = rawCell.v;
-        
-                document.getElementById('updateInfo').innerHTML = El Semáforo ha sido actualizado el ${formattedText};
+                document.getElementById('updateInfo').innerHTML = `El Semáforo ha sido actualizado el ${formattedText}`;
             } catch (error) {
                 console.error('Error fetching update time:', error);
                 document.getElementById('updateInfo').innerHTML = '';
@@ -210,7 +208,7 @@
             const headerRow = data[0].slice(2);
             const dateHeaders = headerRow.map(dateString => {
                 const [day, month, year] = dateString.split('/');
-                const dateObj = new Date(${year}-${month}-${day});
+                const dateObj = new Date(`${year}-${month}-${day}`);
                 const shortMonths = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
                 const weekday = dateObj.toLocaleString('es-ES', { weekday: 'long' });
                 return {
@@ -224,14 +222,14 @@
 
             let table = '<table><thead><tr><th>Turno</th>';
             dateHeaders.forEach(date => {
-                table += 
+                table += `
                     <th>
                         <div class="date-header">
                             <div class="date-day">${date.day} ${date.month}</div>
                             <div class="date-weekday">${date.weekday}</div>
                         </div>
                     </th>
-                ;
+                `;
             });
             table += '</tr></thead><tbody>';
 
@@ -241,11 +239,11 @@
                 const shiftCode = row[1];
                 const shiftName = shiftMap[shiftCode] || shiftCode;
 
-                table += <tr><td>${shiftName}</td>;
+                table += `<tr><td>${shiftName}</td>`;
 
                 row.slice(2).forEach(cellContent => {
                     const [color, value] = cellContent.split('|');
-                    table += <td style="background-color: ${color};">${value}</td>;
+                    table += `<td style="background-color: ${color};">${value}</td>`;
                 });
 
                 table += '</tr>';
